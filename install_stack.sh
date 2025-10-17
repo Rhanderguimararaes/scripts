@@ -1,20 +1,35 @@
 #!/bin/bash
-# ============================================
-# Auto Installer - Full Stack Automation Server
-# Ubuntu 24.04 LTS - By Rhander & GPT-5 💪
-# ============================================
+# ==========================================================
+#  🚀 Instalador Automático - Full Automation Stack
+#  Autor: Rhander Guimarães & GPT-5
+#  Sistema: Ubuntu 24.04 LTS
+# ==========================================================
 
 set -e
-
-# -------- CONFIGURAÇÕES INICIAIS --------
-echo "🚀 Iniciando instalação completa do servidor de automação..."
+clear
+echo "==============================================="
+echo "🔥 INSTALADOR AUTOMÁTICO DA SUA STACK DE AUTOMAÇÃO 🔥"
+echo "==============================================="
 sleep 2
 
-# Atualizar e instalar dependências básicas
+# -------- INTERAÇÃO COM O USUÁRIO --------
+read -p "🌐 Digite o domínio principal (ex: modela.click): " DOMAIN
+read -p "📧 Digite o e-mail principal (Let's Encrypt e notificações): " LE_EMAIL
+read -p "✉️  Digite o e-mail SMTP (ex: seuemail@gmail.com): " SMTP_USERNAME
+read -p "🔑 Digite a senha do aplicativo SMTP: " SMTP_PASSWORD
+read -p "📮 Digite o servidor SMTP (ex: smtp.gmail.com): " SMTP_SERVER
+read -p "📡 Digite a porta SMTP (ex: 587): " SMTP_PORT
+
+# -------- FUNÇÃO GERAR SENHA --------
+gen_pass() { openssl rand -hex 16; }
+
+# -------- ATUALIZA E INSTALA DEPENDÊNCIAS --------
+echo "🧱 Preparando o ambiente..."
 apt update && apt upgrade -y
 apt install -y curl git ufw fail2ban openssl apt-transport-https ca-certificates gnupg lsb-release
 
-# Segurança básica
+# -------- SEGURANÇA --------
+echo "🛡️ Configurando segurança..."
 ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
@@ -23,7 +38,6 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 ufw --force enable
 
-# Configuração do Fail2Ban
 cat << EOF > /etc/fail2ban/jail.local
 [sshd]
 enabled = true
@@ -34,7 +48,7 @@ EOF
 systemctl enable fail2ban
 systemctl restart fail2ban
 
-# -------- DOCKER & COMPOSE --------
+# -------- INSTALA DOCKER E COMPOSE --------
 echo "🐳 Instalando Docker e Docker Compose..."
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -43,23 +57,13 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt update && apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# -------- DIRETÓRIO DO PROJETO --------
+# -------- DIRETÓRIO E REDES --------
 mkdir -p /opt/stack && cd /opt/stack
 docker network create web || true
 docker network create internal --internal || true
 
-# -------- GERAR CREDENCIAIS --------
+# -------- GERA CREDENCIAIS AUTOMÁTICAS --------
 echo "🔐 Gerando credenciais automáticas..."
-gen_pass() { openssl rand -hex 16; }
-
-DOMAIN="modela.click"
-LE_EMAIL="rhander@gmail.com"
-SMTP_USERNAME="rhander@gmail.com"
-SMTP_PASSWORD="xwkdxorrrahqccoh"
-SMTP_SERVER="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_FROM_EMAIL="rhander@gmail.com"
-
 DB_PASSWORD=$(gen_pass)
 JWT_SECRET=$(gen_pass)
 MINIO_ROOT_USER="minioadmin"
@@ -76,6 +80,8 @@ RABBITMQ_DEFAULT_USER="rabbitadmin"
 RABBITMQ_DEFAULT_PASSWORD=$(gen_pass)
 REDIS_PASSWORD=$(gen_pass)
 
+# -------- CRIA .env --------
+echo "🧾 Criando arquivo .env..."
 cat << EOF > .env
 DOMAIN=$DOMAIN
 LE_EMAIL=$LE_EMAIL
@@ -98,13 +104,11 @@ SMTP_SERVER=$SMTP_SERVER
 SMTP_PORT=$SMTP_PORT
 SMTP_USERNAME=$SMTP_USERNAME
 SMTP_PASSWORD=$SMTP_PASSWORD
-SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL
-YOUTUBE_API_KEY=sua_youtube_key
-OPENAI_API_KEY=sua_openai_key
+SMTP_FROM_EMAIL=$SMTP_USERNAME
 EOF
 
-# -------- DOCKERFILE E COMPOSE --------
-echo "⚙️ Criando Dockerfile e docker-compose..."
+# -------- DOCKERFILE PARA n8n --------
+echo "⚙️ Gerando Dockerfile customizado do n8n..."
 cat << 'DOCKER' > Dockerfile.n8n
 FROM n8nio/n8n:latest
 USER root
@@ -112,11 +116,24 @@ RUN apk add --no-cache ffmpeg
 USER node
 DOCKER
 
-# (Aqui você pode inserir o docker-compose.yml original do manual — já testado.)
-
-# -------- INICIAR STACK --------
-docker compose build
-docker compose up -d
-
-echo "✅ Instalação concluída!"
-echo "Acesse seus serviços via HTTPS: traefik.$DOMAIN, portainer.$DOMAIN, n8n.$DOMAIN etc."
+# -------- AVISO FINAL --------
+echo ""
+echo "✅ Instalação do ambiente base concluída!"
+echo "------------------------------------------------"
+echo "🌐 Domínio base: $DOMAIN"
+echo "🔑 Credenciais salvas em: /opt/stack/.env"
+echo ""
+echo "📦 Próximos passos:"
+echo "1️⃣ Copie ou adicione o docker-compose.yml completo no diretório /opt/stack"
+echo "2️⃣ Rode os comandos abaixo:"
+echo "    docker compose build"
+echo "    docker compose up -d"
+echo ""
+echo "Acesse depois:"
+echo "➡️ https://n8n.$DOMAIN"
+echo "➡️ https://portainer.$DOMAIN"
+echo "➡️ https://chatwoot.$DOMAIN"
+echo "➡️ https://traefik.$DOMAIN"
+echo ""
+echo "✨ Feito por Rhander & GPT-5"
+echo "---------------------------
